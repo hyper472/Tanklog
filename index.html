@@ -2,6 +2,9 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<meta name="robots"    content="noindex, nofollow, noarchive, noimageindex">
+<meta name="googlebot" content="noindex, nofollow, noarchive">
+<meta name="robots"    content="noai, noimageai">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Tanklog</title>
 
@@ -310,55 +313,74 @@ body {
   color:var(--text-dimmer);font-size:13px;
 }
 
-/* Datums-Feld */
-input[type="date"] {
-  color-scheme: dark;
-  font-size:16px; /* verhindert Auto-Zoom auf iOS */
-  letter-spacing:.3px;
-}
-
 /* ── Home-Aktionsleiste (Export + Fahrzeug hinzufügen) ── */
-.home-actions {
-  padding: 0 16px 36px;
-  display: grid; grid-template-columns: 1fr auto; gap: 10px;
+
+
+/* ── Tabellen-CSS für Tankhistorie ── */
+input[type="date"] { color-scheme:dark; font-size:16px; letter-spacing:.3px; }
+.tbl-wrap {overflow-x:auto;-webkit-overflow-scrolling:touch}
+.htable {width:100%;border-collapse:collapse;font-size:13px}
+.htable th {
+  font-size:10px;text-transform:uppercase;letter-spacing:.8px;
+  color:var(--text-dim);padding:8px 10px 8px 14px;
+  border-bottom:1px solid var(--border);white-space:nowrap;text-align:right;
 }
+.htable th:first-child,.htable th:nth-child(2){text-align:left}
+.htable td {
+  padding:10px 10px 10px 14px;border-bottom:1px solid var(--border);
+  white-space:nowrap;text-align:right;vertical-align:middle;
+}
+.htable td:first-child,.htable td:nth-child(2){text-align:left}
+.htable tr:last-child td{border-bottom:none}
+.htable tr:hover td{background:rgba(255,255,255,.02)}
+.td-date {font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:var(--amber)}
+.td-time {font-size:12px;color:var(--text-dim)}
+.td-num  {font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:16px;color:var(--text)}
+.td-cons {color:var(--amber) !important}
+.td-avg  {color:var(--text-dim)}
+.td-ref  {font-style:italic;font-size:11px;color:var(--text-dimmer);text-align:center}
+.td-acts {display:flex;gap:5px;justify-content:flex-end;padding-left:8px}
+.btn-icon {
+  width:30px;height:30px;border-radius:6px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text-dim);font-size:13px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;transition:all .13s;
+}
+.btn-icon-del{color:var(--red);border-color:rgba(224,85,85,.2)}
+.btn-icon:active{background:rgba(255,255,255,.07)}
+.btn-icon-del:active{background:rgba(224,85,85,.1)}
+
+/* ── Home-Aktionsleiste ── */
+.home-actions {padding:0 16px 36px;display:grid;grid-template-columns:1fr auto;gap:10px}
 .btn-export {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--rs); color: var(--text-dim);
-  font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
-  font-size: 16px; letter-spacing: 0.5px; padding: 13px;
-  cursor: pointer; transition: all .15s;
-  -webkit-tap-highlight-color: transparent;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);
+  color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  font-size:16px;letter-spacing:.5px;padding:13px;cursor:pointer;transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
 }
-.btn-export:active { background: var(--surface2); color: var(--amber); border-color: var(--amber-dim); }
+.btn-export:active{background:var(--surface2);color:var(--amber);border-color:var(--amber-dk)}
 .btn-add-veh {
-  background: var(--amber); border: none; border-radius: var(--rs);
-  color: #0c1a2e; font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900; font-size: 26px; width: 52px;
-  cursor: pointer; transition: background .15s; line-height: 1;
-  -webkit-tap-highlight-color: transparent;
+  background:var(--amber);border:none;border-radius:var(--rs);color:#0c1a2e;
+  font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;width:52px;
+  cursor:pointer;transition:background .15s;line-height:1;
+  -webkit-tap-highlight-color:transparent;
 }
-.btn-add-veh:active { background: var(--amber-dk); }
-
-/* Icon-Picker */
-.icon-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.btn-add-veh:active{background:var(--amber-dk)}
+.icon-picker{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .icon-btn {
-  width: 46px; height: 46px; border: 2px solid var(--border);
-  border-radius: var(--rs); background: var(--surface2);
-  font-size: 22px; cursor: pointer; transition: border-color .15s;
-  display: flex; align-items: center; justify-content: center;
-  -webkit-tap-highlight-color: transparent;
+  width:46px;height:46px;border:2px solid var(--border);border-radius:var(--rs);
+  background:var(--surface2);font-size:22px;cursor:pointer;transition:border-color .15s;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;
 }
-.icon-btn.sel { border-color: var(--amber); background: rgba(240,120,0,.10); }
-
-/* Löschen-Button auf Fahrzeugkarte (nur für Zusatz-Fahrzeuge) */
+.icon-btn.sel{border-color:var(--amber);background:rgba(240,120,0,.10)}
 .v-del {
-  position: absolute; right: 38px; top: 50%; transform: translateY(-50%);
-  background: none; border: none; color: var(--text-dimmer);
-  font-size: 19px; cursor: pointer; padding: 8px; z-index: 2; line-height: 1;
-  -webkit-tap-highlight-color: transparent;
+  position:absolute;right:38px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--text-dimmer);
+  font-size:19px;cursor:pointer;padding:8px;z-index:2;line-height:1;
+  -webkit-tap-highlight-color:transparent;
 }
-.v-del:active { color: var(--red); }
+.v-del:active{color:var(--red)}
 </style>
 </head>
 <body>
@@ -521,6 +543,51 @@ input[type="date"] {
   </div>
 </div>
 
+<!-- FAHRZEUG HINZUFÜGEN -->
+<div class="overlay" id="ovAddVeh">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Fahrzeug hinzufügen</div>
+    <div class="mform">
+      <div class="fg">
+        <label for="newVehName">Bezeichnung</label>
+        <input id="newVehName" type="text" placeholder="z. B. Vespa, Anhänger …" maxlength="30">
+        <div class="errmsg" id="errVehName">Bitte eine Bezeichnung eingeben</div>
+      </div>
+      <div class="fg">
+        <label>Icon</label>
+        <div class="icon-picker" id="iconPicker">
+          <button class="icon-btn sel" onclick="pickIcon(this,event)">🚗</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🚙</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🚐</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🏍</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🛵</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🚌</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🚛</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🚜</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-acts">
+      <button class="btn-cancel" onclick="closeOv('ovAddVeh')">Abbrechen</button>
+      <button class="btn-save-confirm" onclick="doAddVeh()">HINZUFÜGEN</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAHRZEUG ENTFERNEN -->
+<div class="overlay" id="ovDelVeh">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Fahrzeug entfernen?</div>
+    <div class="modal-txt" id="delVehTxt"></div>
+    <div class="modal-acts">
+      <button class="btn-cancel" onclick="closeOv('ovDelVeh')">Abbrechen</button>
+      <button class="btn-del-confirm" onclick="confirmDelVeh()">ENTFERNEN</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -551,40 +618,26 @@ const BASE_VEHS = [
 let VEHS = [...BASE_VEHS];
 
 let curVeh = null;
+let pendDelVehId = null;
 let curEntries = [];
 let pendDelId = null;
 let pendEditId = null;
-let pendDelVehId = null;
-
-/* ══════════════════════════════════════════════════════════
-   KONFIGURATION – für GitHub Pages / JSONBin.io
-   Anleitung: README.md lesen
-   ══════════════════════════════════════════════════════════ */
 const CONFIG = {
   MASTER_KEY: '$2a$10$Xodn.77unEuE/8Hgvn6RROTqm1Tno52sK8krT91IRliTXeXZoyI5W',
-  BIN_ID:     '6a1c584221f9ee59d2a18e3d',
+  BIN_ID:     '6a1c54e1ddf5aa59f77c2218',
 };
 
-/* ── Storage-Abstraction ──────────────────────────────────
-   Priorität: 1. JSONBin (GitHub Pages)
-              2. window.storage (Claude-Artifact-Umgebung)
-              3. localStorage  (offline, kein Gerätesharing)
-   ──────────────────────────────────────────────────────── */
-const _hasClaudeStorage = (() => {
-  try { return typeof window.storage?.get === 'function'; } catch { return false; }
-})();
-const _useJsonBin  = !_hasClaudeStorage && !!CONFIG.MASTER_KEY;
-const _useLocal    = !_hasClaudeStorage && !CONFIG.MASTER_KEY;
-const _JBBASE      = 'https://api.jsonbin.io/v3/b';
-let   _jbCache     = null;   // Lokaler In-Memory-Cache → minimiert API-Calls
+const _hasClaudeStorage = (() => { try { return typeof window.storage?.get==='function'; } catch { return false; } })();
+const _useJsonBin = !_hasClaudeStorage && !!CONFIG.MASTER_KEY;
+const _JBBASE = 'https://api.jsonbin.io/v3/b';
+let _jbCache = null;
 
 async function _jbRead() {
   if (_jbCache) return _jbCache;
+  if (!CONFIG.BIN_ID) CONFIG.BIN_ID = localStorage.getItem('tanklog_bin_id') || '';
   if (!CONFIG.BIN_ID) return {};
   try {
-    const r = await fetch(`${_JBBASE}/${CONFIG.BIN_ID}/latest`, {
-      headers: { 'X-Master-Key': CONFIG.MASTER_KEY }
-    });
+    const r = await fetch(`${_JBBASE}/${CONFIG.BIN_ID}/latest`, { headers:{'X-Master-Key':CONFIG.MASTER_KEY} });
     _jbCache = (await r.json()).record || {};
   } catch { _jbCache = {}; }
   return _jbCache;
@@ -593,68 +646,38 @@ async function _jbRead() {
 async function _jbWrite(data) {
   _jbCache = data;
   if (!CONFIG.BIN_ID) {
-    // Erster Start: neues Bin anlegen und ID anzeigen
     try {
-      const r   = await fetch(_JBBASE, {
-        method: 'POST',
-        headers: {
-          'X-Master-Key':  CONFIG.MASTER_KEY,
-          'Content-Type':  'application/json',
-          'X-Bin-Name':    'Tanklog',
-          'X-Bin-Private': 'true'
-        },
+      const r = await fetch(_JBBASE, {
+        method:'POST',
+        headers:{'X-Master-Key':CONFIG.MASTER_KEY,'Content-Type':'application/json','X-Bin-Name':'Tanklog','X-Bin-Private':'true'},
         body: JSON.stringify(data)
       });
-      const obj = await r.json();
-      CONFIG.BIN_ID = obj.metadata.id;
-      alert(
-        'Bin erfolgreich erstellt!\n\n' +
-        'BIN_ID: ' + CONFIG.BIN_ID + '\n\n' +
-        'Bitte diesen Wert in der index.html\n' +
-        'bei CONFIG.BIN_ID eintragen und\n' +
-        'erneut auf GitHub pushen.'
-      );
-    } catch(e) { console.error('JSONBin create error:', e); }
+      CONFIG.BIN_ID = (await r.json()).metadata.id;
+      localStorage.setItem('tanklog_bin_id', CONFIG.BIN_ID);
+      alert('Bin erstellt!\nBIN_ID: ' + CONFIG.BIN_ID + '\nBitte in index.html bei CONFIG.BIN_ID eintragen.');
+    } catch(e) { console.error('JSONBin create:', e); }
     return;
   }
   try {
     await fetch(`${_JBBASE}/${CONFIG.BIN_ID}`, {
-      method: 'PUT',
-      headers: {
-        'X-Master-Key': CONFIG.MASTER_KEY,
-        'Content-Type': 'application/json'
-      },
+      method:'PUT',
+      headers:{'X-Master-Key':CONFIG.MASTER_KEY,'Content-Type':'application/json'},
       body: JSON.stringify(data)
     });
-  } catch(e) { console.error('JSONBin write error:', e); }
+  } catch(e) { console.error('JSONBin write:', e); }
 }
 
-/* Einzelnes Fahrzeug laden */
 async function sLoad(vid) {
   const key = 'fuel_' + vid;
-  if (_hasClaudeStorage) {
-    try {
-      const r = await window.storage.get(key, true);
-      return r ? JSON.parse(r.value) : [];
-    } catch { return []; }
-  }
-  if (_useJsonBin) { const db = await _jbRead(); return db[key] || []; }
-  try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+  if (_hasClaudeStorage) { try { const r = await window.storage.get(key,true); return r?JSON.parse(r.value):[]; } catch { return []; } }
+  if (_useJsonBin) { const db = await _jbRead(); return db[key]||[]; }
+  try { return JSON.parse(localStorage.getItem(key)||'[]'); } catch { return []; }
 }
 
-/* Einzelnes Fahrzeug speichern */
 async function sSave(vid, entries) {
   const key = 'fuel_' + vid;
-  if (_hasClaudeStorage) {
-    try { await window.storage.set(key, JSON.stringify(entries), true); } catch {}
-    return;
-  }
-  if (_useJsonBin) {
-    const db = await _jbRead();
-    db[key] = entries;
-    await _jbWrite(db);
-    return;
-  }
+  if (_hasClaudeStorage) { try { await window.storage.set(key,JSON.stringify(entries),true); } catch {} return; }
+  if (_useJsonBin) { const db = await _jbRead(); db[key]=entries; await _jbWrite(db); return; }
   localStorage.setItem(key, JSON.stringify(entries));
 }
 
@@ -702,25 +725,36 @@ const fKm = n => n.toLocaleString('de-DE');
 async function renderHome() {
   const g = document.getElementById('vGrid');
   g.innerHTML = '';
+
+  // 1. Karten sofort einblenden (ohne auf Storage zu warten)
+  for (const v of VEHS) {
+    const isBase = BASE_VEHS.some(b => b.id === v.id);
+    const el = document.createElement('div');
+    el.className = 'v-card';
+    el.id = 'vcard_' + v.id;
+    el.innerHTML = `
+      <div class="v-name">${v.icon} ${v.name}</div>
+      <div class="v-stats" id="vstats_${v.id}">
+        <div class="chip" style="color:var(--text-dimmer)">Lade …</div>
+      </div>
+      ${!isBase ? '<button class="v-del">✕</button>' : ''}`;
+    if (!isBase) el.querySelector('.v-del').addEventListener('click', e => openDelVeh(v.id, e));
+    el.addEventListener('click', () => showVehicle(v.id));
+    g.appendChild(el);
+  }
+
+  // 2. Daten asynchron nachladen und Karten aktualisieren
   for (const v of VEHS) {
     const entries = await sLoad(v.id);
     const last = calcLast(entries);
     const avg  = calcAvg(entries);
-    const el = document.createElement('div');
-    el.className = 'v-card';
-    el.innerHTML = `
-      <div class="v-name">${v.icon} ${v.name}</div>
-      <div class="v-stats">
+    const statsEl = document.getElementById('vstats_' + v.id);
+    if (statsEl) {
+      statsEl.innerHTML = `
         <div class="chip">${entries.length} Einträge</div>
-        ${last !== null
-          ? `<div class="chip">Letzter: <span class="badge-amber">${fL(last)}</span> L/100 km</div>`
-          : ''}
-        ${avg !== null
-          ? `<div class="chip">Ø <span class="badge-amber">${fL(avg)}</span> L/100 km</div>`
-          : ''}
-      </div>`;
-    el.onclick = () => showVehicle(v.id);
-    g.appendChild(el);
+        ${last !== null ? `<div class="chip">Letzter: <span class="badge-amber">${fL(last)}</span> L/100 km</div>` : ''}
+        ${avg  !== null ? `<div class="chip">Ø <span class="badge-amber">${fL(avg)}</span> L/100 km</div>`  : ''}`;
+    }
   }
 }
 
@@ -737,7 +771,7 @@ async function showVehicle(vid) {
 
   document.getElementById('iDate').value   = new Date().toISOString().slice(0,10);
   document.getElementById('iLiters').value = '';
-  document.getElementById('iKm').value     = '';
+  document.getElementById('iKm').value = '';
   clearErr('iLiters','eLiters');
   clearErr('iKm','eKm');
 
@@ -811,21 +845,13 @@ async function doSave() {
     return;
   }
 
-  // Eingegebenes Datum + aktuelle Uhrzeit kombinieren
-  const _dateVal = document.getElementById('iDate').value;
-  const _now     = new Date();
-  const _ts      = _dateVal
-    ? new Date(_dateVal + 'T' + _now.toTimeString().slice(0,8)).toISOString()
-    : _now.toISOString();
-
-  curEntries.push({
-    id: crypto.randomUUID(),
-    timestamp: _ts,
-    liters: l,
-    km: k
-  });
+  const _dv=document.getElementById('iDate').value;
+  const _now=new Date();
+  const _ts=_dv?new Date(_dv+'T'+_now.toTimeString().slice(0,8)).toISOString():_now.toISOString();
+  curEntries.push({id:crypto.randomUUID(),timestamp:_ts,liters:l,km:k});
   await sSave(curVeh, curEntries);
 
+  document.getElementById('iDate').value   = new Date().toISOString().slice(0,10);
   document.getElementById('iLiters').value = '';
   document.getElementById('iKm').value = '';
   renderVehicle();
@@ -879,13 +905,11 @@ async function doEdit() {
 
   const idx = curEntries.findIndex(e => e.id === pendEditId);
   if (idx >= 0) {
-    const _dv   = document.getElementById('eDateE').value;
-    const _orig = new Date(curEntries[idx].timestamp);
-    const _newTs = _dv
-      ? new Date(_dv + 'T' + _orig.toTimeString().slice(0,8)).toISOString()
-      : curEntries[idx].timestamp;
-    curEntries[idx] = { ...curEntries[idx], liters: l, km: k, timestamp: _newTs };
-    await sSave(curVeh, curEntries);
+    const _dv=document.getElementById('eDateE').value;
+    const _orig=new Date(curEntries[idx].timestamp);
+    const _ts=_dv?new Date(_dv+'T'+_orig.toTimeString().slice(0,8)).toISOString():curEntries[idx].timestamp;
+    curEntries[idx]={...curEntries[idx],liters:l,km:k,timestamp:_ts};
+    await sSave(curVeh,curEntries);
   }
   closeOv('ovEdit');
   renderVehicle();
@@ -931,34 +955,20 @@ function toast(msg, ok = false) {
 
 /* ── Fahrzeugverwaltung ──────────────────────────────── */
 async function loadExtraVehs() {
-  let extras = [];
   try {
-    if (_hasClaudeStorage) {
-      const r = await window.storage.get('extra_vehicles', true);
-      if (r && r.value) extras = JSON.parse(r.value);
-    } else if (_useJsonBin) {
-      const db = await _jbRead();
-      extras = db['extra_vehicles'] || [];
-    } else {
-      extras = JSON.parse(localStorage.getItem('extra_vehicles') || '[]');
+    const r = await window.storage.get('extra_vehicles', true);
+    if (r && r.value) {
+      const extras = JSON.parse(r.value);
+      VEHS = [...BASE_VEHS, ...extras.map(e => ({ id: e.id, name: e.name, icon: e.icon || '🚗' }))];
     }
   } catch {}
-  VEHS = [...BASE_VEHS, ...extras.map(e => ({ id: e.id, name: e.name, icon: e.icon || '🚗' }))];
 }
 
 async function saveExtraVehs() {
-  const extras = VEHS.filter(v => !BASE_VEHS.find(b => b.id === v.id))
-    .map(({ id, name, icon }) => ({ id, name, icon }));
+  const extras = VEHS.filter(v => !BASE_VEHS.find(b => b.id === v.id));
   try {
-    if (_hasClaudeStorage) {
-      await window.storage.set('extra_vehicles', JSON.stringify(extras), true);
-    } else if (_useJsonBin) {
-      const db = await _jbRead();
-      db['extra_vehicles'] = extras;
-      await _jbWrite(db);
-    } else {
-      localStorage.setItem('extra_vehicles', JSON.stringify(extras));
-    }
+    await window.storage.set('extra_vehicles',
+      JSON.stringify(extras.map(({ id, name, icon }) => ({ id, name, icon }))), true);
   } catch {}
 }
 
@@ -1005,14 +1015,7 @@ function openDelVeh(vid, e) {
 
 async function confirmDelVeh() {
   if (!pendDelVehId) return;
-  const _dk = 'fuel_' + pendDelVehId;
-  if (_hasClaudeStorage) {
-    try { await window.storage.delete(_dk, true); } catch {}
-  } else if (_useJsonBin) {
-    const db = await _jbRead(); delete db[_dk]; await _jbWrite(db);
-  } else {
-    localStorage.removeItem(_dk);
-  }
+  try { await window.storage.delete(sKey(pendDelVehId), true); } catch {}
   VEHS = VEHS.filter(v => v.id !== pendDelVehId);
   await saveExtraVehs();
   closeOv('ovDelVeh');
@@ -1060,13 +1063,10 @@ async function exportExcel() {
 
 /* ── Init ────────────────────────────────────────────── */
 async function init() {
-  await loadExtraVehs();
-  renderHome();
-  // Hinweis wenn kein Sharing möglich
-  if (_useLocal) {
-    const sub = document.getElementById('hdrSub');
-    if (sub) sub.title = 'Offline-Modus: Daten nur auf diesem Gerät gespeichert';
-  }
+  if (!CONFIG.BIN_ID) CONFIG.BIN_ID = localStorage.getItem('tanklog_bin_id') || '';
+  renderHome();                  // sofort anzeigen
+  await loadExtraVehs();         // Zusatzfahrzeuge nachladen
+  renderHome();                  // nochmal mit allen Fahrzeugen
 }
 init();
 </script>

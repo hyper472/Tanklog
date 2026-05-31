@@ -212,26 +212,23 @@ body {
   font-family:'Barlow Condensed',sans-serif;
   font-weight:700;font-size:17px;letter-spacing:.3px;
 }
-.hcard-count {font-size:11px;color:var(--text-dim)}
+.hcard-count {font-size:14px;color:var(--text-dim)}
 .hempty {padding:32px 18px;text-align:center;color:var(--text-dimmer);font-size:13px;line-height:1.7}
 
 .entry {padding:12px 18px;border-bottom:1px solid var(--border)}
 .entry:last-child{border-bottom:none}
 .entry-top {display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}
-.entry-dt {font-size:11px;color:var(--text-dimmer)}
+.entry-dt {font-size:14px;color:var(--text-dim)}
 .entry-cons {
   font-family:'Barlow Condensed',sans-serif;
   font-weight:700;font-size:17px;color:var(--amber);
 }
-.entry-cons.ref {
-  font-family:'DM Sans',sans-serif;font-weight:300;
-  font-size:11px;color:var(--text-dimmer);font-style:italic;
-}
-.entry-details {font-size:12px;color:var(--text-dim);margin-bottom:9px}
+.entry-cons.ref {font-size:14px;color:var(--text-dim);font-style:italic}
+.entry-details {font-size:16px;color:var(--text-dim);margin-bottom:9px}
 .entry-acts {display:flex;gap:8px}
 
 .btn-sm {
-  font-size:11px;padding:4px 11px;border-radius:6px;
+  font-size:15px;padding:4px 11px;border-radius:6px;
   border:1px solid var(--border);cursor:pointer;
   background:var(--surface2);color:var(--text-dim);
   font-family:'DM Sans',sans-serif;
@@ -319,9 +316,9 @@ body {
 /* ── Tabellen-CSS für Tankhistorie ── */
 input[type="date"] { color-scheme:dark; font-size:16px; letter-spacing:.3px; }
 .tbl-wrap {overflow-x:auto;-webkit-overflow-scrolling:touch}
-.htable {width:100%;border-collapse:collapse;font-size:13px}
+.htable {width:100%;border-collapse:collapse;font-size:16px}
 .htable th {
-  font-size:10px;text-transform:uppercase;letter-spacing:.8px;
+  font-size:12px;text-transform:uppercase;letter-spacing:.8px;
   color:var(--text-dim);padding:8px 10px 8px 14px;
   border-bottom:1px solid var(--border);white-space:nowrap;text-align:right;
 }
@@ -334,11 +331,11 @@ input[type="date"] { color-scheme:dark; font-size:16px; letter-spacing:.3px; }
 .htable tr:last-child td{border-bottom:none}
 .htable tr:hover td{background:rgba(255,255,255,.02)}
 .td-date {font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:var(--amber)}
-.td-time {font-size:12px;color:var(--text-dim)}
+.td-time {font-size:16px;color:var(--text-dim)}
 .td-num  {font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:16px;color:var(--text)}
 .td-cons {color:var(--amber) !important}
 .td-avg  {color:var(--text-dim)}
-.td-ref  {font-style:italic;font-size:11px;color:var(--text-dimmer);text-align:center}
+.td-ref  {font-style:italic;font-size:15px;color:var(--text-dimmer);text-align:center}
 .td-acts {display:flex;gap:5px;justify-content:flex-end;padding-left:8px}
 .btn-icon {
   width:30px;height:30px;border-radius:6px;border:1px solid var(--border);
@@ -802,24 +799,34 @@ function renderVehicle() {
     return;
   }
 
-  list.innerHTML = sorted.map(e => {
+  const rows = sorted.map(e => {
     const cons  = calcForEntry(curEntries, e.id);
     const first = isFirst(curEntries, e.id);
-    return `
-    <div class="entry">
-      <div class="entry-top">
-        <div class="entry-dt">${fDate(e.timestamp)}</div>
-        ${cons !== null
-          ? `<div class="entry-cons">${fL(cons)} L/100 km</div>`
-          : `<div class="entry-cons ref">${first ? 'Referenzwert' : '—'}</div>`}
-      </div>
-      <div class="entry-details">⛽ ${fL(e.liters)} L &nbsp;·&nbsp; 📍 ${fKm(e.km)} km</div>
-      <div class="entry-acts">
-        <button class="btn-sm" onclick="openEdit('${e.id}')">✏ Bearbeiten</button>
-        <button class="btn-sm btn-del-sm" onclick="openDel('${e.id}')">✕ Löschen</button>
-      </div>
-    </div>`;
+    const d     = new Date(e.timestamp);
+    const datum = d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const uhr   = d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+    const consCell = cons !== null
+      ? `<td class="td-num td-cons">${fL(cons)}</td>`
+      : `<td class="td-ref">${first ? 'Referenzwert' : '—'}</td>`;
+    const avgCell = avg !== null
+      ? `<td class="td-num td-avg">${fL(avg)}</td>`
+      : `<td class="td-ref">—</td>`;
+    return `<tr>
+      <td class="td-date">${datum}</td>
+      <td class="td-time">${uhr}</td>
+      <td class="td-num">${fL(e.liters)}</td>
+      <td class="td-num">${fKm(e.km)}</td>
+      ${consCell}${avgCell}
+      <td class="td-acts">
+        <button class="btn-icon" onclick="openEdit('${e.id}')" title="Bearbeiten">✏</button>
+        <button class="btn-icon btn-icon-del" onclick="openDel('${e.id}')" title="Löschen">✕</button>
+      </td></tr>`;
   }).join('');
+  list.innerHTML = `<div class="tbl-wrap"><table class="htable">
+    <thead><tr>
+      <th>Datum</th><th>Zeit</th><th>Liter</th><th>km-Stand</th>
+      <th>L/100 km ↗</th><th>L/100 km ⌀</th><th></th>
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 /* ── Save Entry ──────────────────────────────────────── */

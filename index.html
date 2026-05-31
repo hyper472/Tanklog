@@ -310,6 +310,13 @@ body {
   color:var(--text-dimmer);font-size:13px;
 }
 
+/* Datums-Feld */
+input[type="date"] {
+  color-scheme: dark;
+  font-size:16px; /* verhindert Auto-Zoom auf iOS */
+  letter-spacing:.3px;
+}
+
 /* ── Home-Aktionsleiste (Export + Fahrzeug hinzufügen) ── */
 .home-actions {
   padding: 0 16px 36px;
@@ -398,6 +405,10 @@ body {
 
     <div class="fcard">
       <div class="fcard-title">Tankvorgang erfassen</div>
+      <div class="fg" style="margin-bottom:12px">
+        <label for="iDate">Datum der Betankung</label>
+        <input type="date" id="iDate">
+      </div>
       <div class="frow">
         <div class="fg">
           <label for="iLiters">Liter getankt</label>
@@ -443,6 +454,10 @@ body {
     <div class="modal-handle"></div>
     <div class="modal-title">Eintrag bearbeiten</div>
     <div class="mform">
+      <div class="fg">
+        <label for="eDateE">Datum</label>
+        <input type="date" id="eDateE">
+      </div>
       <div class="fg">
         <label for="eLitersE">Liter getankt</label>
         <input id="eLitersE" type="number" inputmode="decimal" step="0.01" min="0.01">
@@ -546,7 +561,7 @@ let pendDelVehId = null;
    Anleitung: README.md lesen
    ══════════════════════════════════════════════════════════ */
 const CONFIG = {
-  MASTER_KEY: '',   // JSONBin Master Key (aus jsonbin.io Dashboard kopieren)
+  MASTER_KEY: '$2a$10$Xodn.77unEuE/8Hgvn6RROTqm1Tno52sK8krT91IRliTXeXZoyI5W',
   BIN_ID:     '',   // Wird beim ersten Start automatisch erzeugt
 };
 
@@ -720,8 +735,9 @@ async function showVehicle(vid) {
   document.getElementById('backBtn').style.display = 'block';
   document.getElementById('hdrSub').textContent = v.name;
 
+  document.getElementById('iDate').value   = new Date().toISOString().slice(0,10);
   document.getElementById('iLiters').value = '';
-  document.getElementById('iKm').value = '';
+  document.getElementById('iKm').value     = '';
   clearErr('iLiters','eLiters');
   clearErr('iKm','eKm');
 
@@ -795,9 +811,16 @@ async function doSave() {
     return;
   }
 
+  // Eingegebenes Datum + aktuelle Uhrzeit kombinieren
+  const _dateVal = document.getElementById('iDate').value;
+  const _now     = new Date();
+  const _ts      = _dateVal
+    ? new Date(_dateVal + 'T' + _now.toTimeString().slice(0,8)).toISOString()
+    : _now.toISOString();
+
   curEntries.push({
     id: crypto.randomUUID(),
-    timestamp: new Date().toISOString(),
+    timestamp: _ts,
     liters: l,
     km: k
   });
@@ -830,6 +853,7 @@ async function doDel() {
 function openEdit(id) {
   pendEditId = id;
   const e = curEntries.find(x => x.id === id);
+  document.getElementById('eDateE').value   = new Date(e.timestamp).toISOString().slice(0,10);
   document.getElementById('eLitersE').value = e.liters;
   document.getElementById('eKmE').value     = e.km;
   clearErr('eLitersE','eeLiters');
@@ -855,7 +879,12 @@ async function doEdit() {
 
   const idx = curEntries.findIndex(e => e.id === pendEditId);
   if (idx >= 0) {
-    curEntries[idx] = { ...curEntries[idx], liters: l, km: k };
+    const _dv   = document.getElementById('eDateE').value;
+    const _orig = new Date(curEntries[idx].timestamp);
+    const _newTs = _dv
+      ? new Date(_dv + 'T' + _orig.toTimeString().slice(0,8)).toISOString()
+      : curEntries[idx].timestamp;
+    curEntries[idx] = { ...curEntries[idx], liters: l, km: k, timestamp: _newTs };
     await sSave(curVeh, curEntries);
   }
   closeOv('ovEdit');

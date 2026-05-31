@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tanklog</title>
+
+<!-- ── Crawler-Sperren ──────────────────────────────────────────────────
+     Verhindert Indexierung durch Suchmaschinen und untersagt KI-Crawlern
+     die Verwendung des Inhalts für Training (soweit Meta-Tags respektiert).
+     Vollständiger Schutz vor KI-Crawlern erfordert zusätzlich robots.txt
+     auf Server-Ebene (außerhalb dieser Datei).
+──────────────────────────────────────────────────────────────────────── -->
+
+<!-- Suchmaschinen: nicht indexieren, nicht folgen, nicht cachen/archivieren -->
+<meta name="robots"    content="noindex, nofollow, noarchive, noimageindex, nositelinkssearchbox, noodp">
+<meta name="googlebot" content="noindex, nofollow, noarchive, noimageindex">
+<meta name="bingbot"   content="noindex, nofollow, noarchive, noimageindex">
+
+<!-- KI-Training-Opt-out (noch kein universeller Standard, aber wachsende Unterstützung) -->
+<meta name="robots"    content="noai, noimageai">
+
+<!-- Kein Snippet / kein Vorschaubild in Suchergebnissen -->
+<meta name="robots"    content="max-snippet:-1, max-image-preview:none, max-video-preview:-1">
+
+<!-- Verhindert Web-Archivierung (Wayback Machine respektiert dies) -->
+<meta name="archive"   content="noarchive">
+
+<!-- Open Graph deaktivieren, damit keine Vorschaukarte in Social Media entsteht -->
+<meta property="og:title"       content="">
+<meta property="og:description" content="">
+<meta property="og:image"       content="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg: #0c1a2e;
+  --surface: #12263d;
+  --surface2: #1c3554;
+  --border: rgba(255,255,255,0.08);
+  --amber: #f07800;
+  --amber-dk: #c05e00;
+  --text: #e8ecf0;
+  --text-dim: #7aaac8;
+  --text-dimmer: #2a4565;
+  --red: #e05555;
+  --green: #55bb77;
+  --r: 13px;
+  --rs: 9px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overscroll-behavior:none}
+
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans',-apple-system,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── Header ── */
+.hdr {
+  position:sticky;top:0;z-index:80;
+  background:rgba(13,15,20,0.9);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:10px 16px;
+  display:flex;align-items:center;gap:10px;
+}
+.hdr-logo {
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:900;font-size:21px;
+  letter-spacing:3px;color:var(--amber);
+}
+.hdr-sub {
+  font-size:10px;color:var(--text-dim);
+  letter-spacing:1.2px;margin-top:1px;
+  text-transform:uppercase;
+}
+.back-btn {
+  background:none;border:none;color:var(--amber);
+  font-size:24px;cursor:pointer;padding:0 10px 0 0;
+  display:none;line-height:1;flex-shrink:0;
+}
+
+/* ── Screens ── */
+.screen{display:none}
+.screen.on{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── Home ── */
+.home-lbl {
+  padding:20px 16px 10px;
+  font-size:11px;color:var(--text-dim);
+  text-transform:uppercase;letter-spacing:1.2px;
+}
+.v-grid {padding:0 16px 48px;display:flex;flex-direction:column;gap:10px}
+
+.v-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:18px 48px 18px 20px;
+  cursor:pointer;
+  transition:background .15s,border-color .15s;
+  position:relative;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+.v-card::before {
+  content:'';position:absolute;
+  top:0;left:0;width:3px;height:100%;
+  background:var(--amber);
+  transform:scaleY(0);transform-origin:top;
+  transition:transform .2s ease;
+}
+.v-card::after {
+  content:'›';position:absolute;
+  right:18px;top:50%;transform:translateY(-50%);
+  color:var(--text-dimmer);font-size:26px;font-weight:300;
+}
+.v-card:active,.v-card:hover{background:var(--surface2)}
+.v-card:active::before,.v-card:hover::before{transform:scaleY(1)}
+
+.v-name {
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;font-size:27px;letter-spacing:.3px;
+  margin-bottom:5px;
+}
+.v-stats {font-size:12px;color:var(--text-dim);display:flex;flex-wrap:wrap;gap:0 10px}
+.v-stats .chip {
+  display:flex;align-items:center;gap:5px;
+}
+.v-stats .chip::before {content:'·';color:var(--text-dimmer)}
+.v-stats .chip:first-child::before{display:none}
+.badge-amber {
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  font-size:13px;color:var(--amber);
+}
+
+/* ── Vehicle Screen ── */
+.vsc {padding:14px 16px 52px;display:flex;flex-direction:column;gap:13px}
+
+/* Stat row */
+.stat-row {display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-box {
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px 15px;
+}
+.stat-lbl {font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+.stat-val {
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  font-size:31px;color:var(--amber);line-height:1;
+}
+.stat-unit {font-size:11px;color:var(--text-dim);margin-top:2px}
+.stat-note {font-size:10px;color:var(--text-dimmer);margin-top:4px;font-style:italic}
+
+/* Form */
+.fcard {
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px;
+}
+.fcard-title {
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;font-size:17px;letter-spacing:.3px;
+  margin-bottom:14px;
+}
+.frow {display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.fg {display:flex;flex-direction:column;gap:5px}
+.fg label {font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.9px}
+.fg input {
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--rs);color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:17px;font-weight:500;
+  padding:11px 12px;width:100%;
+  transition:border-color .15s;
+  -webkit-appearance:none;appearance:none;
+}
+.fg input:focus{outline:none;border-color:var(--amber)}
+.fg input.err{border-color:var(--red)}
+.errmsg{font-size:10px;color:var(--red);display:none;margin-top:2px}
+.errmsg.show{display:block}
+
+.btn-save {
+  background:var(--amber);color:#0c1a2e;border:none;
+  border-radius:var(--rs);
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  font-size:17px;letter-spacing:1.5px;
+  padding:13px;width:100%;cursor:pointer;
+  transition:background .15s,transform .08s;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-save:active{background:var(--amber-dk);transform:scale(0.985)}
+
+/* History */
+.hcard {
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
+}
+.hcard-hdr {
+  padding:13px 18px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.hcard-title {
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;font-size:17px;letter-spacing:.3px;
+}
+.hcard-count {font-size:11px;color:var(--text-dim)}
+.hempty {padding:32px 18px;text-align:center;color:var(--text-dimmer);font-size:13px;line-height:1.7}
+
+.entry {padding:12px 18px;border-bottom:1px solid var(--border)}
+.entry:last-child{border-bottom:none}
+.entry-top {display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}
+.entry-dt {font-size:11px;color:var(--text-dimmer)}
+.entry-cons {
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;font-size:17px;color:var(--amber);
+}
+.entry-cons.ref {
+  font-family:'DM Sans',sans-serif;font-weight:300;
+  font-size:11px;color:var(--text-dimmer);font-style:italic;
+}
+.entry-details {font-size:12px;color:var(--text-dim);margin-bottom:9px}
+.entry-acts {display:flex;gap:8px}
+
+.btn-sm {
+  font-size:11px;padding:4px 11px;border-radius:6px;
+  border:1px solid var(--border);cursor:pointer;
+  background:var(--surface2);color:var(--text-dim);
+  font-family:'DM Sans',sans-serif;
+  transition:all .13s;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-del-sm {color:var(--red);border-color:rgba(224,85,85,.2)}
+.btn-del-sm:active{background:rgba(224,85,85,.1)}
+.btn-sm:active{background:rgba(255,255,255,.05)}
+
+/* ── Modals (bottom sheet) ── */
+.overlay {
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.75);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+  z-index:200;
+  display:none;align-items:flex-end;justify-content:center;
+}
+.overlay.on{display:flex;animation:bgIn .2s ease}
+@keyframes bgIn{from{opacity:0}to{opacity:1}}
+
+.modal {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-top-left-radius:20px;border-top-right-radius:20px;
+  padding:10px 20px 40px;
+  width:100%;max-width:480px;
+  animation:sheetUp .25s cubic-bezier(.34,1.26,.64,1);
+}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+
+.modal-handle {
+  width:36px;height:4px;
+  background:rgba(255,255,255,.12);
+  border-radius:99px;margin:0 auto 20px;
+}
+.modal-title {
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;font-size:22px;margin-bottom:8px;
+}
+.modal-txt {font-size:13px;color:var(--text-dim);margin-bottom:20px;line-height:1.65}
+.modal-acts {display:flex;gap:10px}
+.btn-cancel {
+  flex:1;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--rs);color:var(--text-dim);font-size:15px;
+  padding:13px;cursor:pointer;font-family:'DM Sans',sans-serif;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-del-confirm {
+  flex:1;background:var(--red);border:none;border-radius:var(--rs);color:#fff;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  font-size:18px;letter-spacing:.8px;padding:13px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-save-confirm {
+  flex:1;background:var(--amber);border:none;border-radius:var(--rs);color:#0c1a2e;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  font-size:18px;letter-spacing:.8px;padding:13px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.mform {display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+
+/* ── Toast ── */
+.toast {
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:99px;padding:9px 20px;font-size:12px;
+  color:var(--text);
+  transition:transform .28s cubic-bezier(.34,1.4,.64,1);
+  z-index:500;white-space:nowrap;pointer-events:none;
+}
+.toast.on{transform:translateX(-50%) translateY(0)}
+.toast.ok{color:var(--green);border-color:rgba(85,187,119,.3)}
+
+.loading {
+  padding:48px;text-align:center;
+  color:var(--text-dimmer);font-size:13px;
+}
+
+/* ── Home-Aktionsleiste (Export + Fahrzeug hinzufügen) ── */
+.home-actions {
+  padding: 0 16px 36px;
+  display: grid; grid-template-columns: 1fr auto; gap: 10px;
+}
+.btn-export {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--rs); color: var(--text-dim);
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+  font-size: 16px; letter-spacing: 0.5px; padding: 13px;
+  cursor: pointer; transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-export:active { background: var(--surface2); color: var(--amber); border-color: var(--amber-dim); }
+.btn-add-veh {
+  background: var(--amber); border: none; border-radius: var(--rs);
+  color: #0c1a2e; font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900; font-size: 26px; width: 52px;
+  cursor: pointer; transition: background .15s; line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-add-veh:active { background: var(--amber-dk); }
+
+/* Icon-Picker */
+.icon-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.icon-btn {
+  width: 46px; height: 46px; border: 2px solid var(--border);
+  border-radius: var(--rs); background: var(--surface2);
+  font-size: 22px; cursor: pointer; transition: border-color .15s;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn.sel { border-color: var(--amber); background: rgba(240,120,0,.10); }
+
+/* Löschen-Button auf Fahrzeugkarte (nur für Zusatz-Fahrzeuge) */
+.v-del {
+  position: absolute; right: 38px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text-dimmer);
+  font-size: 19px; cursor: pointer; padding: 8px; z-index: 2; line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.v-del:active { color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <button class="back-btn" id="backBtn" onclick="goHome()">←</button>
+  <div>
+    <div class="hdr-logo">TANKLOG</div>
+    <div class="hdr-sub" id="hdrSub">Fahrzeug wählen</div>
+  </div>
+</div>
+
+<!-- HOME SCREEN -->
+<div class="screen on" id="sHome">
+  <div class="home-lbl">Welches Fahrzeug wurde betankt?</div>
+  <div class="v-grid" id="vGrid">
+    <div class="loading">Lade Daten …</div>
+  </div>
+</div>
+<div class="home-actions">
+  <button class="btn-export" onclick="exportExcel()">↓ &nbsp;Excel-Export</button>
+  <button class="btn-add-veh" title="Fahrzeug hinzufügen" onclick="openAddVeh()">＋</button>
+</div>
+
+<!-- VEHICLE SCREEN -->
+<div class="screen" id="sVehicle">
+  <div class="vsc">
+
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-lbl">Letzter Verbrauch</div>
+        <div class="stat-val" id="stLast">—</div>
+        <div class="stat-unit">L / 100 km</div>
+        <div class="stat-note" id="stLastNote"></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-lbl">Gesamtdurchschnitt</div>
+        <div class="stat-val" id="stAvg">—</div>
+        <div class="stat-unit">L / 100 km</div>
+        <div class="stat-note" id="stAvgNote"></div>
+      </div>
+    </div>
+
+    <div class="fcard">
+      <div class="fcard-title">Tankvorgang erfassen</div>
+      <div class="frow">
+        <div class="fg">
+          <label for="iLiters">Liter getankt</label>
+          <input id="iLiters" type="number" inputmode="decimal" placeholder="45,5" step="0.01" min="0.01">
+          <div class="errmsg" id="eLiters">Bitte Liter eingeben</div>
+        </div>
+        <div class="fg">
+          <label for="iKm">Kilometerstand</label>
+          <input id="iKm" type="number" inputmode="numeric" placeholder="123456" step="1" min="0">
+          <div class="errmsg" id="eKm">Bitte km-Stand eingeben</div>
+        </div>
+      </div>
+      <button class="btn-save" onclick="doSave()">EINTRAGEN</button>
+    </div>
+
+    <div class="hcard">
+      <div class="hcard-hdr">
+        <span class="hcard-title">Tankhistorie</span>
+        <span class="hcard-count" id="hCount"></span>
+      </div>
+      <div id="hList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="overlay" id="ovDel">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Eintrag löschen?</div>
+    <div class="modal-txt" id="delTxt">Dieser Eintrag wird unwiderruflich gelöscht.</div>
+    <div class="modal-acts">
+      <button class="btn-cancel" onclick="closeOv('ovDel')">Abbrechen</button>
+      <button class="btn-del-confirm" onclick="doDel()">LÖSCHEN</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="overlay" id="ovEdit">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Eintrag bearbeiten</div>
+    <div class="mform">
+      <div class="fg">
+        <label for="eLitersE">Liter getankt</label>
+        <input id="eLitersE" type="number" inputmode="decimal" step="0.01" min="0.01">
+        <div class="errmsg" id="eeLiters">Bitte Liter eingeben</div>
+      </div>
+      <div class="fg">
+        <label for="eKmE">Kilometerstand</label>
+        <input id="eKmE" type="number" inputmode="numeric" step="1" min="0">
+        <div class="errmsg" id="eeKm">Bitte km-Stand eingeben</div>
+      </div>
+    </div>
+    <div class="modal-acts">
+      <button class="btn-cancel" onclick="closeOv('ovEdit')">Abbrechen</button>
+      <button class="btn-save-confirm" onclick="doEdit()">SPEICHERN</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAHRZEUG HINZUFÜGEN -->
+<div class="overlay" id="ovAddVeh">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Fahrzeug hinzufügen</div>
+    <div class="mform">
+      <div class="fg">
+        <label for="newVehName">Bezeichnung</label>
+        <input id="newVehName" type="text" placeholder="z. B. Vespa, Anhänger …" maxlength="30">
+        <div class="errmsg" id="errVehName">Bitte eine Bezeichnung eingeben</div>
+      </div>
+      <div class="fg">
+        <label>Icon</label>
+        <div class="icon-picker" id="iconPicker">
+          <button class="icon-btn sel" onclick="pickIcon(this,event)">🚗</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🚙</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🚐</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🏍</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🛵</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🚌</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🚛</button>
+          <button class="icon-btn" onclick="pickIcon(this,event)">🚜</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-acts">
+      <button class="btn-cancel" onclick="closeOv('ovAddVeh')">Abbrechen</button>
+      <button class="btn-save-confirm" onclick="doAddVeh()">HINZUFÜGEN</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAHRZEUG ENTFERNEN -->
+<div class="overlay" id="ovDelVeh">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Fahrzeug entfernen?</div>
+    <div class="modal-txt" id="delVehTxt"></div>
+    <div class="modal-acts">
+      <button class="btn-cancel" onclick="closeOv('ovDelVeh')">Abbrechen</button>
+      <button class="btn-del-confirm" onclick="confirmDelVeh()">ENTFERNEN</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── Icons ───────────────────────────────────────────── */
+
+/* Schnauferl: Cartoon-Bild als eingebettete PNG (Hintergrund transparent) */
+const C1_ICON = `<img src="data:image/png;base64,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" width="68" height="52" style="vertical-align:middle;margin-right:4px;display:inline-block">`;
+
+/* Škoda: einfaches graues Auto im Emoji-Stil */
+const SKODA_ICON = `<svg viewBox="0 0 62 38" width="46" height="28" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:3px;display:inline-block">
+  <circle cx="13" cy="30" r="7.5" fill="#4a4a4a"/><circle cx="13" cy="30" r="3.2" fill="#242424"/><circle cx="13" cy="30" r="1" fill="#7a7a7a"/>
+  <circle cx="49" cy="30" r="7.5" fill="#4a4a4a"/><circle cx="49" cy="30" r="3.2" fill="#242424"/><circle cx="49" cy="30" r="1" fill="#7a7a7a"/>
+  <path d="M6 22 L6 25 Q13 31 20 25 L42 25 Q49 31 56 25 L56 22 Q56 17 52 14 Q47 8 40 8 L24 8 Q16 8 11 14 Q6 17 6 22 Z" fill="#6e6e6e"/>
+  <path d="M21 22 Q21 13 27 11 L41 11 Q51 14 51 22 Z" fill="#c0c0c0" opacity="0.88"/>
+  <rect x="33" y="11" width="2" height="11" fill="#505050"/>
+  <path d="M52 16 Q57 19 57 24 L52 24" fill="#888" opacity="0.7"/>
+  <rect x="6" y="19" width="3.5" height="5" rx="1" fill="#888" opacity="0.6"/>
+</svg>`;
+
+/* Fest eingebaute Fahrzeuge (können nicht gelöscht werden) */
+const BASE_VEHS = [
+  { id:'apollo13',    name:'Apollo 13',  icon:'🚀' },
+  { id:'skoda',       name:'Škoda',      icon: SKODA_ICON },
+  { id:'schnauferl',  name:'Schnauferl', icon: C1_ICON },
+];
+
+/* Wird beim Start aus dem Storage geladen und um Zusatzfahrzeuge ergänzt */
+let VEHS = [...BASE_VEHS];
+
+let curVeh = null;
+let curEntries = [];
+let pendDelId = null;
+let pendEditId = null;
+let pendDelVehId = null;
+
+/* ══════════════════════════════════════════════════════════
+   KONFIGURATION – für GitHub Pages / JSONBin.io
+   Anleitung: README.md lesen
+   ══════════════════════════════════════════════════════════ */
+const CONFIG = {
+  MASTER_KEY: '',   // JSONBin Master Key (aus jsonbin.io Dashboard kopieren)
+  BIN_ID:     '',   // Wird beim ersten Start automatisch erzeugt
+};
+
+/* ── Storage-Abstraction ──────────────────────────────────
+   Priorität: 1. JSONBin (GitHub Pages)
+              2. window.storage (Claude-Artifact-Umgebung)
+              3. localStorage  (offline, kein Gerätesharing)
+   ──────────────────────────────────────────────────────── */
+const _hasClaudeStorage = (() => {
+  try { return typeof window.storage?.get === 'function'; } catch { return false; }
+})();
+const _useJsonBin  = !_hasClaudeStorage && !!CONFIG.MASTER_KEY;
+const _useLocal    = !_hasClaudeStorage && !CONFIG.MASTER_KEY;
+const _JBBASE      = 'https://api.jsonbin.io/v3/b';
+let   _jbCache     = null;   // Lokaler In-Memory-Cache → minimiert API-Calls
+
+async function _jbRead() {
+  if (_jbCache) return _jbCache;
+  if (!CONFIG.BIN_ID) return {};
+  try {
+    const r = await fetch(`${_JBBASE}/${CONFIG.BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': CONFIG.MASTER_KEY }
+    });
+    _jbCache = (await r.json()).record || {};
+  } catch { _jbCache = {}; }
+  return _jbCache;
+}
+
+async function _jbWrite(data) {
+  _jbCache = data;
+  if (!CONFIG.BIN_ID) {
+    // Erster Start: neues Bin anlegen und ID anzeigen
+    try {
+      const r   = await fetch(_JBBASE, {
+        method: 'POST',
+        headers: {
+          'X-Master-Key':  CONFIG.MASTER_KEY,
+          'Content-Type':  'application/json',
+          'X-Bin-Name':    'Tanklog',
+          'X-Bin-Private': 'true'
+        },
+        body: JSON.stringify(data)
+      });
+      const obj = await r.json();
+      CONFIG.BIN_ID = obj.metadata.id;
+      alert(
+        'Bin erfolgreich erstellt!\n\n' +
+        'BIN_ID: ' + CONFIG.BIN_ID + '\n\n' +
+        'Bitte diesen Wert in der index.html\n' +
+        'bei CONFIG.BIN_ID eintragen und\n' +
+        'erneut auf GitHub pushen.'
+      );
+    } catch(e) { console.error('JSONBin create error:', e); }
+    return;
+  }
+  try {
+    await fetch(`${_JBBASE}/${CONFIG.BIN_ID}`, {
+      method: 'PUT',
+      headers: {
+        'X-Master-Key': CONFIG.MASTER_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+  } catch(e) { console.error('JSONBin write error:', e); }
+}
+
+/* Einzelnes Fahrzeug laden */
+async function sLoad(vid) {
+  const key = 'fuel_' + vid;
+  if (_hasClaudeStorage) {
+    try {
+      const r = await window.storage.get(key, true);
+      return r ? JSON.parse(r.value) : [];
+    } catch { return []; }
+  }
+  if (_useJsonBin) { const db = await _jbRead(); return db[key] || []; }
+  try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+}
+
+/* Einzelnes Fahrzeug speichern */
+async function sSave(vid, entries) {
+  const key = 'fuel_' + vid;
+  if (_hasClaudeStorage) {
+    try { await window.storage.set(key, JSON.stringify(entries), true); } catch {}
+    return;
+  }
+  if (_useJsonBin) {
+    const db = await _jbRead();
+    db[key] = entries;
+    await _jbWrite(db);
+    return;
+  }
+  localStorage.setItem(key, JSON.stringify(entries));
+}
+
+/* ── Calculations ────────────────────────────────────── */
+const byKm = arr => [...arr].sort((a,b) => a.km - b.km);
+
+function calcLast(entries) {
+  const s = byKm(entries);
+  if (s.length < 2) return null;
+  const diff = s[s.length-1].km - s[s.length-2].km;
+  return diff > 0 ? (s[s.length-1].liters / diff) * 100 : null;
+}
+
+function calcAvg(entries) {
+  const s = byKm(entries);
+  if (s.length < 2) return null;
+  const totalL = s.slice(1).reduce((a,e) => a + e.liters, 0);
+  const totalKm = s[s.length-1].km - s[0].km;
+  return totalKm > 0 ? (totalL / totalKm) * 100 : null;
+}
+
+function calcForEntry(entries, id) {
+  const s = byKm(entries);
+  const i = s.findIndex(e => e.id === id);
+  if (i <= 0) return null;
+  const diff = s[i].km - s[i-1].km;
+  return diff > 0 ? (s[i].liters / diff) * 100 : null;
+}
+
+function isFirst(entries, id) {
+  const s = byKm(entries);
+  return s.length > 0 && s[0].id === id;
+}
+
+/* ── Format ──────────────────────────────────────────── */
+const fDate = ts => {
+  const d = new Date(ts);
+  return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'})
+    + ', ' + d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' Uhr';
+};
+const fL  = n => n.toFixed(2).replace('.', ',');
+const fKm = n => n.toLocaleString('de-DE');
+
+/* ── Home Screen ─────────────────────────────────────── */
+async function renderHome() {
+  const g = document.getElementById('vGrid');
+  g.innerHTML = '';
+  for (const v of VEHS) {
+    const entries = await sLoad(v.id);
+    const last = calcLast(entries);
+    const avg  = calcAvg(entries);
+    const el = document.createElement('div');
+    el.className = 'v-card';
+    el.innerHTML = `
+      <div class="v-name">${v.icon} ${v.name}</div>
+      <div class="v-stats">
+        <div class="chip">${entries.length} Einträge</div>
+        ${last !== null
+          ? `<div class="chip">Letzter: <span class="badge-amber">${fL(last)}</span> L/100 km</div>`
+          : ''}
+        ${avg !== null
+          ? `<div class="chip">Ø <span class="badge-amber">${fL(avg)}</span> L/100 km</div>`
+          : ''}
+      </div>`;
+    el.onclick = () => showVehicle(v.id);
+    g.appendChild(el);
+  }
+}
+
+/* ── Vehicle Screen ──────────────────────────────────── */
+async function showVehicle(vid) {
+  curVeh = vid;
+  curEntries = await sLoad(vid);
+  const v = VEHS.find(x => x.id === vid);
+
+  document.getElementById('sHome').classList.remove('on');
+  document.getElementById('sVehicle').classList.add('on');
+  document.getElementById('backBtn').style.display = 'block';
+  document.getElementById('hdrSub').textContent = v.name;
+
+  document.getElementById('iLiters').value = '';
+  document.getElementById('iKm').value = '';
+  clearErr('iLiters','eLiters');
+  clearErr('iKm','eKm');
+
+  renderVehicle();
+}
+
+function renderVehicle() {
+  const last = calcLast(curEntries);
+  const avg  = calcAvg(curEntries);
+
+  document.getElementById('stLast').textContent = last !== null ? fL(last) : '—';
+  document.getElementById('stLastNote').textContent =
+    last !== null ? '' :
+    (curEntries.length === 0 ? 'Noch kein Eintrag' : 'Referenzwert – noch kein Verbrauch');
+
+  document.getElementById('stAvg').textContent = avg !== null ? fL(avg) : '—';
+  document.getElementById('stAvgNote').textContent =
+    avg !== null
+      ? `aus ${curEntries.length} Einträgen`
+      : 'Mind. 2 Einträge nötig';
+
+  const sorted = [...curEntries].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+  document.getElementById('hCount').textContent = `${curEntries.length} Einträge`;
+
+  const list = document.getElementById('hList');
+  if (curEntries.length === 0) {
+    list.innerHTML = '<div class="hempty">Noch kein Tankvorgang erfasst.<br>Leg einfach los! ⛽</div>';
+    return;
+  }
+
+  list.innerHTML = sorted.map(e => {
+    const cons  = calcForEntry(curEntries, e.id);
+    const first = isFirst(curEntries, e.id);
+    return `
+    <div class="entry">
+      <div class="entry-top">
+        <div class="entry-dt">${fDate(e.timestamp)}</div>
+        ${cons !== null
+          ? `<div class="entry-cons">${fL(cons)} L/100 km</div>`
+          : `<div class="entry-cons ref">${first ? 'Referenzwert' : '—'}</div>`}
+      </div>
+      <div class="entry-details">⛽ ${fL(e.liters)} L &nbsp;·&nbsp; 📍 ${fKm(e.km)} km</div>
+      <div class="entry-acts">
+        <button class="btn-sm" onclick="openEdit('${e.id}')">✏ Bearbeiten</button>
+        <button class="btn-sm btn-del-sm" onclick="openDel('${e.id}')">✕ Löschen</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Save Entry ──────────────────────────────────────── */
+async function doSave() {
+  const rawL = document.getElementById('iLiters').value.replace(',', '.');
+  const rawK = document.getElementById('iKm').value;
+  let ok = true;
+
+  const l = parseFloat(rawL);
+  if (!rawL || isNaN(l) || l <= 0) {
+    showErr('iLiters','eLiters','Bitte Liter eingeben'); ok = false;
+  } else { clearErr('iLiters','eLiters'); }
+
+  const k = parseInt(rawK);
+  if (!rawK || isNaN(k) || k < 0) {
+    showErr('iKm','eKm','Bitte km-Stand eingeben'); ok = false;
+  } else { clearErr('iKm','eKm'); }
+  if (!ok) return;
+
+  const sorted = byKm(curEntries);
+  if (sorted.length > 0 && k <= sorted[sorted.length-1].km) {
+    showErr('iKm','eKm',`Muss größer sein als ${fKm(sorted[sorted.length-1].km)} km`);
+    return;
+  }
+
+  curEntries.push({
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
+    liters: l,
+    km: k
+  });
+  await sSave(curVeh, curEntries);
+
+  document.getElementById('iLiters').value = '';
+  document.getElementById('iKm').value = '';
+  renderVehicle();
+  toast('Eintrag gespeichert ✓', true);
+}
+
+/* ── Delete ──────────────────────────────────────────── */
+function openDel(id) {
+  pendDelId = id;
+  const e = curEntries.find(x => x.id === id);
+  document.getElementById('delTxt').textContent =
+    `Eintrag vom ${fDate(e.timestamp)} (${fL(e.liters)} L, ${fKm(e.km)} km) wird unwiderruflich gelöscht.`;
+  document.getElementById('ovDel').classList.add('on');
+}
+
+async function doDel() {
+  curEntries = curEntries.filter(e => e.id !== pendDelId);
+  await sSave(curVeh, curEntries);
+  closeOv('ovDel');
+  renderVehicle();
+  toast('Eintrag gelöscht');
+}
+
+/* ── Edit ────────────────────────────────────────────── */
+function openEdit(id) {
+  pendEditId = id;
+  const e = curEntries.find(x => x.id === id);
+  document.getElementById('eLitersE').value = e.liters;
+  document.getElementById('eKmE').value     = e.km;
+  clearErr('eLitersE','eeLiters');
+  clearErr('eKmE','eeKm');
+  document.getElementById('ovEdit').classList.add('on');
+}
+
+async function doEdit() {
+  const rawL = document.getElementById('eLitersE').value.replace(',', '.');
+  const rawK = document.getElementById('eKmE').value;
+  let ok = true;
+
+  const l = parseFloat(rawL);
+  if (!rawL || isNaN(l) || l <= 0) {
+    showErr('eLitersE','eeLiters','Bitte Liter eingeben'); ok = false;
+  } else { clearErr('eLitersE','eeLiters'); }
+
+  const k = parseInt(rawK);
+  if (!rawK || isNaN(k) || k < 0) {
+    showErr('eKmE','eeKm','Bitte km-Stand eingeben'); ok = false;
+  } else { clearErr('eKmE','eeKm'); }
+  if (!ok) return;
+
+  const idx = curEntries.findIndex(e => e.id === pendEditId);
+  if (idx >= 0) {
+    curEntries[idx] = { ...curEntries[idx], liters: l, km: k };
+    await sSave(curVeh, curEntries);
+  }
+  closeOv('ovEdit');
+  renderVehicle();
+  toast('Eintrag aktualisiert ✓', true);
+}
+
+/* ── Navigation & Helpers ────────────────────────────── */
+function goHome() {
+  document.getElementById('sVehicle').classList.remove('on');
+  document.getElementById('sHome').classList.add('on');
+  document.getElementById('backBtn').style.display = 'none';
+  document.getElementById('hdrSub').textContent = 'Fahrzeug wählen';
+  curVeh = null;
+  renderHome();
+}
+
+function closeOv(id) { document.getElementById(id).classList.remove('on'); }
+
+document.querySelectorAll('.overlay').forEach(el =>
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('on'); })
+);
+
+function showErr(inputId, errId, msg) {
+  document.getElementById(inputId).classList.add('err');
+  const el = document.getElementById(errId);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function clearErr(inputId, errId) {
+  document.getElementById(inputId).classList.remove('err');
+  document.getElementById(errId).classList.remove('show');
+}
+
+let _tt;
+function toast(msg, ok = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast on' + (ok ? ' ok' : '');
+  clearTimeout(_tt);
+  _tt = setTimeout(() => el.classList.remove('on'), 2800);
+}
+
+
+/* ── Fahrzeugverwaltung ──────────────────────────────── */
+async function loadExtraVehs() {
+  let extras = [];
+  try {
+    if (_hasClaudeStorage) {
+      const r = await window.storage.get('extra_vehicles', true);
+      if (r && r.value) extras = JSON.parse(r.value);
+    } else if (_useJsonBin) {
+      const db = await _jbRead();
+      extras = db['extra_vehicles'] || [];
+    } else {
+      extras = JSON.parse(localStorage.getItem('extra_vehicles') || '[]');
+    }
+  } catch {}
+  VEHS = [...BASE_VEHS, ...extras.map(e => ({ id: e.id, name: e.name, icon: e.icon || '🚗' }))];
+}
+
+async function saveExtraVehs() {
+  const extras = VEHS.filter(v => !BASE_VEHS.find(b => b.id === v.id))
+    .map(({ id, name, icon }) => ({ id, name, icon }));
+  try {
+    if (_hasClaudeStorage) {
+      await window.storage.set('extra_vehicles', JSON.stringify(extras), true);
+    } else if (_useJsonBin) {
+      const db = await _jbRead();
+      db['extra_vehicles'] = extras;
+      await _jbWrite(db);
+    } else {
+      localStorage.setItem('extra_vehicles', JSON.stringify(extras));
+    }
+  } catch {}
+}
+
+function openAddVeh() {
+  document.getElementById('newVehName').value = '';
+  clearErr('newVehName', 'errVehName');
+  document.querySelectorAll('.icon-btn').forEach((b, i) => b.classList.toggle('sel', i === 0));
+  document.getElementById('ovAddVeh').classList.add('on');
+  setTimeout(() => document.getElementById('newVehName').focus(), 300);
+}
+
+function pickIcon(btn, e) {
+  e.stopPropagation();
+  document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+async function doAddVeh() {
+  const name = document.getElementById('newVehName').value.trim();
+  if (!name) { showErr('newVehName', 'errVehName', 'Bitte eine Bezeichnung eingeben'); return; }
+  clearErr('newVehName', 'errVehName');
+  const selBtn = document.querySelector('.icon-btn.sel');
+  const icon = selBtn ? selBtn.textContent : '🚗';
+  const id = 'veh_' + Date.now();
+  VEHS.push({ id, name, icon });
+  await saveExtraVehs();
+  closeOv('ovAddVeh');
+  toast(name + ' hinzugefügt ✓', true);
+  renderHome();
+}
+
+function openDelVeh(vid, e) {
+  e.stopPropagation();
+  pendDelVehId = vid;
+  const v = VEHS.find(x => x.id === vid);
+  sLoad(vid).then(entries => {
+    const txt = entries.length > 0
+      ? `„${v.name}" hat ${entries.length} Einträge. Alle Tankdaten werden unwiderruflich gelöscht.`
+      : `„${v.name}" entfernen? Das Fahrzeug hat noch keine Einträge.`;
+    document.getElementById('delVehTxt').textContent = txt;
+    document.getElementById('ovDelVeh').classList.add('on');
+  });
+}
+
+async function confirmDelVeh() {
+  if (!pendDelVehId) return;
+  const _dk = 'fuel_' + pendDelVehId;
+  if (_hasClaudeStorage) {
+    try { await window.storage.delete(_dk, true); } catch {}
+  } else if (_useJsonBin) {
+    const db = await _jbRead(); delete db[_dk]; await _jbWrite(db);
+  } else {
+    localStorage.removeItem(_dk);
+  }
+  VEHS = VEHS.filter(v => v.id !== pendDelVehId);
+  await saveExtraVehs();
+  closeOv('ovDelVeh');
+  toast('Fahrzeug entfernt');
+  renderHome();
+}
+
+/* ── Excel-Export ────────────────────────────────────── */
+async function exportExcel() {
+  if (typeof XLSX === 'undefined') {
+    toast('SheetJS nicht geladen – bitte Seite neu laden');
+    return;
+  }
+  const wb = XLSX.utils.book_new();
+  let hasData = false;
+
+  for (const v of VEHS) {
+    const entries = await sLoad(v.id);
+    if (entries.length === 0) continue;
+    hasData = true;
+    const asc = [...entries].sort((a, b) => a.km - b.km);
+    const header = ['Nr.', 'Datum', 'Uhrzeit', 'Liter', 'km-Stand', 'Verbrauch L/100 km'];
+    const rows = asc.map((e, i) => {
+      const d = new Date(e.timestamp);
+      const cons = calcForEntry(entries, e.id);
+      return [
+        i + 1,
+        d.toLocaleDateString('de-DE'),
+        d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+        e.liters,
+        e.km,
+        cons !== null ? parseFloat(cons.toFixed(2)) : ''
+      ];
+    });
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    ws['!cols'] = [{ wch:5 }, { wch:12 }, { wch:8 }, { wch:8 }, { wch:13 }, { wch:18 }];
+    XLSX.utils.book_append_sheet(wb, ws, v.name.substring(0, 31));
+  }
+
+  if (!hasData) { toast('Noch keine Daten vorhanden'); return; }
+  const stamp = new Date().toLocaleDateString('de-DE').replace(/\./g, '-');
+  XLSX.writeFile(wb, 'Tanklog_' + stamp + '.xlsx');
+  toast('Excel-Export erstellt ✓', true);
+}
+
+/* ── Init ────────────────────────────────────────────── */
+async function init() {
+  await loadExtraVehs();
+  renderHome();
+  // Hinweis wenn kein Sharing möglich
+  if (_useLocal) {
+    const sub = document.getElementById('hdrSub');
+    if (sub) sub.title = 'Offline-Modus: Daten nur auf diesem Gerät gespeichert';
+  }
+}
+init();
+</script>
+</body>
+</html>
